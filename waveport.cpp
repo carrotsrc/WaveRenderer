@@ -20,17 +20,13 @@ WavePort::WavePort(QWidget *parent) : QWidget(parent)
 	mRawData = new float[length];
 	f.read((char*)mRawData, length*4);
 	f.close();
-	mWaveRenderer = new WaveRenderer(mRawData, length, p);
+	mWaveRenderer = new WaveRenderer(mRawData, length, p, 44100);
 	mPixmap = mWaveRenderer->nextRender(0);
 }
 
 void WavePort::paintEvent(QPaintEvent*) {
 
 	QPainter painter(this);
-	//QPixmap pix( size() );
-	//pix.fill( Qt::black );
-	//painter.drawPixmap( 0, 0, pix );
-
 
 	mMutex.lock();
 	painter.setBrush(mPixmap);
@@ -39,17 +35,17 @@ void WavePort::paintEvent(QPaintEvent*) {
 
 }
 
-void WavePort::cursorForward() {
-	emit updateWave();
+void WavePort::cursorForward(int delta) {
+	emit updateWave(delta);
 }
 
-void WavePort::cursorRewind() {
-	emit updateWave();
+void WavePort::cursorRewind(int delta) {
+	emit updateWave(delta);
 }
 
-void WavePort::waveNextRender() {
+void WavePort::waveNextRender(int delta) {
 	mMutex.lock();
-	mPixmap = mWaveRenderer->nextRender(8);
+	mPixmap = mWaveRenderer->nextRender(delta);
 	mMutex.unlock();
 	emit update();
 }

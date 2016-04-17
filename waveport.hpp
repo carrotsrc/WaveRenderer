@@ -15,12 +15,12 @@ public:
 	void paintEvent(QPaintEvent *);
 
 signals:
-	void updateWave();
+	void updateWave(int);
 
 public slots:
-	void cursorForward();
-	void cursorRewind();
-	void waveNextRender();
+	void cursorForward(int delta);
+	void cursorRewind(int delta);
+	void waveNextRender(int delta);
 
 private:
 	WaveRenderer *mWaveRenderer;

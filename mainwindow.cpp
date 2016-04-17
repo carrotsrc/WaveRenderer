@@ -8,12 +8,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 	mTimer = new QTimer(this);
 	connect(
-			ui->widget,SIGNAL(updateWave()),
-			ui->widget, SLOT(waveNextRender())
+			ui->widget,SIGNAL(updateWave(int)),
+			ui->widget, SLOT(waveNextRender(int))
 			);
 	connect(
-			ui->widget_2,SIGNAL(updateWave()),
-			ui->widget_2, SLOT(waveNextRender())
+			ui->widget_2,SIGNAL(updateWave(int)),
+			ui->widget_2, SLOT(waveNextRender(int))
 			);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(cursorForward()));
 }
@@ -32,6 +32,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e) {
 }
 
 void MainWindow::cursorForward() {
-	this->ui->widget->cursorForward();
-	this->ui->widget_2->cursorForward();
+	this->ui->widget->cursorForward(33);
+	this->ui->widget_2->cursorForward(60);
 }

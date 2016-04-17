@@ -9,7 +9,7 @@ class WaveRenderer : public QWidget
 {
 	Q_OBJECT
 public:
-	explicit WaveRenderer(float* raw, int len, QPoint dim, QWidget *parent = 0);
+	explicit WaveRenderer(float* raw, int len, QPoint dim, int sampleRate, QWidget *parent = 0);
 
 	QPixmap nextRender(int shift);
 	void portForward(int blocks);
@@ -19,9 +19,9 @@ signals:
 public slots:
 
 private:
-	float* mRaw;
+	float* mRaw, mScale;
 	int mRawLen, mCursor, mPortStart;
-	unsigned int mBlockSize, mBufferLevel;
+	unsigned int mBlockSize, mBufferLevel, mSampleRate, mBlockTime;
 	std::uint32_t *mRingPort, mStart, mEnd, mRead, mWrite;
 	QPoint mDimension;
 	QPixmap mFill;
