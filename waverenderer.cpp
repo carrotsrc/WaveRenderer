@@ -14,7 +14,7 @@ WaveRenderer::WaveRenderer(float *raw, int len, QPoint dim, int sampleRate, QWid
 	mBlockSize = static_cast<unsigned int>( (static_cast<float>(mSampleRate) / 1000.0f) * 2.0f );
 	mCentreBlock = mDimension.x()/2;
 	mScale = mDimension.y() / 2.0f;
-	std::cout << "mBlockSize: " << mBlockSize << std::endl;
+	//std::cout << "mBlockSize: " << mBlockSize << std::endl;
 	mRingPort = new std::uint32_t[mDimension.x()];
 	mFill.fill(QColor("#2F2F2F"));
 
@@ -42,24 +42,24 @@ QPixmap WaveRenderer::nextRender(int ms) {
 		}
 		mUpperBound = fillBlocks(mDimension.x()/2);
 	}
-
+	auto dir = 1;
 	if(ms != 0) {
 		auto shift = ms / 2;
+		dir = shift > 0 ? 1 : -1;
 
 		mLowerBound += shift*mBlockSize;
 		mUpperBound += shift*mBlockSize;
 
 		mSampleStart = shift > 0 ? mUpperBound : mLowerBound;
 
-
 		fillBlocks(shift);
 	}
 
-	auto cursor = (mWrite+1)%mDimension.x();
+	auto cursor = (mWrite+dir)%mDimension.x();
+	//std::cout << "cursor: " << cursor << std::endl;
 	for(auto block = 0; block < mDimension.x(); block++) {
 		cursor = cursor % mDimension.x();
 		auto val = mRingPort[cursor++];
-
 
 		auto yp = val & 0x0000ffff;
 		auto yn = val >> 16;
@@ -79,6 +79,7 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 	auto cursor = mSampleStart;
 	auto dir = numBlocks >= 0 ? 1 : -1;
 
+	if(numBlocks < 0) numBlocks *= -1;
 
 	for(auto block = 0; block < numBlocks; block++) {
 
@@ -100,7 +101,7 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 				xPos++;
 			}
 
-			cursor += 2;
+			cursor += (2*dir);
 		}
 
 		auto pi = static_cast<int>(xPos ? (meanPos/xPos) * mScale : 0);
@@ -110,7 +111,7 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 
 		mRingPort[mWrite] = final;
 
-		mWrite++;
+		mWrite += dir;
 
 		mWrite %= tblocks;
 	}
