@@ -4,17 +4,19 @@
 #include "waverenderer.hpp"
 
 WaveRenderer::WaveRenderer(float *raw, int len, QPoint dim, int sampleRate, QWidget *parent): QWidget(parent)
-	, mRaw(raw), mRawLen(len), mCursor(0), mPortStart(0), mBufferLevel(0), mSampleRate(sampleRate)
-	, mRingPort(nullptr), mStart(0), mEnd(0), mRead(0), mWrite(0)
+	, mRaw(raw), mRawLen(len), mSampleStart(0), mLowerBound(0), mUpperBound(0)
+	, mBufferLevel(0), mSampleRate(sampleRate)
+	, mRingPort(nullptr), mStart(0), mEnd(0), mWrite(0)
 	, mDimension(dim), mFill(mDimension.x(), mDimension.y())
 {
 
 	// Each block is 2 ms
 	mBlockSize = static_cast<unsigned int>( (static_cast<float>(mSampleRate) / 1000.0f) * 2.0f );
+	mCentreBlock = mDimension.x()/2;
 	mScale = mDimension.y() / 2.0f;
 	std::cout << "mBlockSize: " << mBlockSize << std::endl;
 	mRingPort = new std::uint32_t[mDimension.x()];
-		mFill.fill(QColor("#2F2F2F"));
+	mFill.fill(QColor("#2F2F2F"));
 
 }
 
@@ -33,59 +35,60 @@ QPixmap WaveRenderer::nextRender(int ms) {
 	painter.setRenderHints(QPainter::HighQualityAntialiasing, true);
 	painter.setPen(pen);
 
-	mCursor = mPortStart;
-
 	if(mBufferLevel == 0) {
 		for(auto x = 0; x < mDimension.x()/2; x++) {
-			mRingPort[mWrite++] = 1;
+			mRingPort[mWrite++] = 0;
 			mBufferLevel++;
 		}
-		fillBlocks(mDimension.x()/2);
+		mUpperBound = fillBlocks(mDimension.x()/2);
 	}
 
-	if(ms > 0) {
+	if(ms != 0) {
 		auto shift = ms / 2;
 
-		mPortStart += shift * mBlockSize;
-		fillBlocks(shift);
-		mRead += shift;
+		mLowerBound += shift*mBlockSize;
+		mUpperBound += shift*mBlockSize;
 
+		mSampleStart = shift > 0 ? mUpperBound : mLowerBound;
+
+
+		fillBlocks(shift);
 	}
 
-	auto cursor = mRead;
+	auto cursor = (mWrite+1)%mDimension.x();
 	for(auto block = 0; block < mDimension.x(); block++) {
 		cursor = cursor % mDimension.x();
 		auto val = mRingPort[cursor++];
+
 
 		auto yp = val & 0x0000ffff;
 		auto yn = val >> 16;
 
 		painter.drawLine(block, mid - yp, block,mid+yn);
-
 	}
 
+	painter.setPen(QPen(QColor("#d283ac")));
+	painter.drawLine(mCentreBlock, 0, mCentreBlock,mDimension.y());
 	return graph;
 }
 
-void WaveRenderer::portForward(int blocks) {
-	mPortStart += mBlockSize * blocks;
-}
 
-void WaveRenderer::portRewind(int blocks) {
-	mPortStart -= mBlockSize * blocks;
-}
-
-void WaveRenderer::fillBlocks(int numBlocks) {
+int WaveRenderer::fillBlocks(int numBlocks) {
 
 	auto tblocks = mDimension.x();
-	auto cursor = mPortStart;
+	auto cursor = mSampleStart;
+	auto dir = numBlocks >= 0 ? 1 : -1;
+
+
 	for(auto block = 0; block < numBlocks; block++) {
+
 		auto x = 0u;
 		auto meanPos = 0.0f, meanNeg = 0.0f,
 				xPos = 0.0f, xNeg = 0.0f;
+
 		for(x = 0; x < mBlockSize; x++) {
 
-			if(cursor >= mRawLen) break;
+			if(cursor < 0 || cursor >= mRawLen) break;
 
 			auto v = mRaw[ cursor ];
 
@@ -100,14 +103,18 @@ void WaveRenderer::fillBlocks(int numBlocks) {
 			cursor += 2;
 		}
 
-		auto yp = xPos ? (meanPos/xPos) * mScale : 0;
-		auto yn = xNeg ? (meanNeg/xNeg) * mScale : 0;
-		auto pi = static_cast<int>(yp);
-		auto ni = static_cast<int>(yn);
+		auto pi = static_cast<int>(xPos ? (meanPos/xPos) * mScale : 0);
+		auto ni = static_cast<int>(xNeg ? (meanNeg/xNeg) * mScale : 0);
 
 		auto final = (ni << 16) ^ pi;
-		mRingPort[mWrite++] = final;
+
+		mRingPort[mWrite] = final;
+
+		mWrite++;
+
 		mWrite %= tblocks;
 	}
+
+	return cursor;
 
 }

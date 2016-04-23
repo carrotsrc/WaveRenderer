@@ -12,21 +12,21 @@ public:
 	explicit WaveRenderer(float* raw, int len, QPoint dim, int sampleRate, QWidget *parent = 0);
 
 	QPixmap nextRender(int shift);
-	void portForward(int blocks);
-	void portRewind(int blocks);
+
 signals:
 
 public slots:
 
 private:
 	float* mRaw, mScale;
-	int mRawLen, mCursor, mPortStart;
-	unsigned int mBlockSize, mBufferLevel, mSampleRate, mBlockTime;
-	std::uint32_t *mRingPort, mStart, mEnd, mRead, mWrite;
+	int mRawLen, mSampleStart, mLowerBound, mUpperBound;
+	unsigned int mBlockSize, mBufferLevel, mSampleRate, mCentreBlock;
+	std::uint32_t *mRingPort, mStart, mEnd, mWrite;
 	QPoint mDimension;
 	QPixmap mFill;
+	int mLastDir;
 
-	void fillBlocks(int numBlocks);
+	int fillBlocks(int numBlocks);
 };
 
 #endif // WAVEVIEWPORT_HPP

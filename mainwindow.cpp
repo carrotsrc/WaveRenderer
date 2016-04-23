@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
 			ui->widget_2, SLOT(waveNextRender(int))
 			);
 	connect(mTimer, SIGNAL(timeout()), this, SLOT(cursorForward()));
+
 }
 
 MainWindow::~MainWindow()
