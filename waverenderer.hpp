@@ -19,9 +19,9 @@ public slots:
 
 private:
 	float* mRaw, mScale;
-	int mRawLen, mSampleStart, mLowerBound, mUpperBound;
+	int mRawLen, mSampleStart, mLowerBound, mUpperBound, mSamplePlay, mPortCentre, mDim;
 	unsigned int mBlockSize, mBufferLevel, mSampleRate, mCentreBlock;
-	std::uint32_t *mRingPort, mStart, mEnd, mWrite;
+	std::uint32_t *mRingPort, mStart, mEnd, mHead;
 	QPoint mDimension;
 	QPixmap mFill;
 	int mLastDir;
