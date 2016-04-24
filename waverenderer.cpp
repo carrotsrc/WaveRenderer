@@ -55,11 +55,11 @@ QPixmap WaveRenderer::nextRender(int ms) {
 		fillBlocks(shift);
 	}
 
-	auto cursor = (mWrite+dir)%mDimension.x();
+	auto bufferCursor = (mWrite+0)%mDimension.x();
 	//std::cout << "cursor: " << cursor << std::endl;
 	for(auto block = 0; block < mDimension.x(); block++) {
-		cursor = cursor % mDimension.x();
-		auto val = mRingPort[cursor++];
+		bufferCursor = bufferCursor % mDimension.x();
+		auto val = mRingPort[bufferCursor++];
 
 		auto yp = val & 0x0000ffff;
 		auto yn = val >> 16;
@@ -76,8 +76,9 @@ QPixmap WaveRenderer::nextRender(int ms) {
 int WaveRenderer::fillBlocks(int numBlocks) {
 
 	auto tblocks = mDimension.x();
-	auto cursor = mSampleStart;
+	auto sampleCursor = mSampleStart;
 	auto dir = numBlocks >= 0 ? 1 : -1;
+	auto mid = tblocks/2;
 
 	if(numBlocks < 0) numBlocks *= -1;
 
@@ -89,9 +90,11 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 
 		for(x = 0; x < mBlockSize; x++) {
 
-			if(cursor < 0 || cursor >= mRawLen) break;
+			if(sampleCursor < 0 || sampleCursor >= mRawLen) {
+				return 0;
+			}
 
-			auto v = mRaw[ cursor ];
+			auto v = mRaw[ sampleCursor ];
 
 			if(v < 0) {
 				meanNeg += v*-1.0;
@@ -101,7 +104,7 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 				xPos++;
 			}
 
-			cursor += (2*dir);
+			sampleCursor += (2*dir);
 		}
 
 		auto pi = static_cast<int>(xPos ? (meanPos/xPos) * mScale : 0);
@@ -111,11 +114,11 @@ int WaveRenderer::fillBlocks(int numBlocks) {
 
 		mRingPort[mWrite] = final;
 
+		if(mWrite == 0) mWrite = tblocks;
 		mWrite += dir;
-
 		mWrite %= tblocks;
 	}
 
-	return cursor;
+	return sampleCursor;
 
 }
